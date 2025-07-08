@@ -312,7 +312,7 @@ sudo certbot renew --dry-run --non-interactive
 # ------------------ START TAIGA SERVICES ------------------
 ./launch-taiga.sh
 sleep 10
-docker compose exec taiga-back python manage.py shell <<EOF
+sudo docker compose exec taiga-back python manage.py shell <<EOF
 from django.contrib.auth import get_user_model
 User = get_user_model()
 if not User.objects.filter(username="$ADMIN_USER").exists():
