@@ -302,6 +302,7 @@ server {
 EOF
 
 sudo ln -sf /etc/nginx/sites-available/$DOMAIN /etc/nginx/sites-enabled/
+sudo cp ./conf/conf.json /var/www/html/conf.json
 sudo nginx -t && sudo systemctl reload nginx
 
 # ------------------ OBTAIN SSL CERTIFICATE ------------------
@@ -312,11 +313,19 @@ sudo certbot renew --dry-run --non-interactive
 # ------------------ START TAIGA SERVICES ------------------
 ./launch-taiga.sh
 sleep 10
-sudo docker compose exec taiga-back python manage.py shell <<EOF
+# ------------------ CREATE SUPERUSER ------------------
+sudo docker compose exec taiga-back \
+  python manage.py shell -c "
 from django.contrib.auth import get_user_model
 User = get_user_model()
-if not User.objects.filter(username="$ADMIN_USER").exists():
-    User.objects.create_superuser("$ADMIN_USER", "$EMAIL", "$ADMIN_PASS")
-EOF
+username = '$ADMIN_USER'
+email = '$EMAIL'
+password = '$ADMIN_PASS'
+if not User.objects.filter(username=username).exists():
+    user = User.objects.create_superuser(username=username, email=email, password=password)
+    print('Superuser created.')
+else:
+    print('Superuser already exists.')
+"
 
 sudo docker compose up -d
