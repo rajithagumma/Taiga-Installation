@@ -239,8 +239,8 @@ cat > ./conf/conf.json <<EOF
   "debug": false,
   "debugInfo": false,
   "defaultLanguage": "en",
-  "themes": ["taiga", "taiga-dark"],
-  "defaultTheme": "taiga-dark",
+  "themes": ["taiga"],
+  "defaultTheme": "taiga",
   "defaultLoginEnabled": true,
   "publicRegisterEnabled": true,
   "feedbackEnabled": true,
@@ -268,21 +268,20 @@ sudo mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled
 
 sudo tee /etc/nginx/sites-available/$DOMAIN > /dev/null <<EOF
 server {
-    listen 443 ssl;
-    server_name $DOMAIN;
+    listen 80;
+    server_name work.justuju.in;
     client_max_body_size 100M;
-
     location = /conf.json {
         root /var/www/html;
         add_header Content-Type application/json;
     }
 
     location / {
-        proxy_set_header Host \$http_host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Scheme \$scheme;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Scheme $scheme;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_redirect off;
         proxy_pass http://localhost:9000/;
     }
@@ -290,29 +289,15 @@ server {
     location /events {
         proxy_pass http://localhost:9000/events;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
-        proxy_set_header Host \$host;
+        proxy_set_header Host $host;
         proxy_connect_timeout 7d;
         proxy_send_timeout 7d;
         proxy_read_timeout 7d;
     }
-
-    ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
-    include /etc/letsencrypt/options-ssl-nginx.conf;
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 }
 
-server {
-    if (\$host = $DOMAIN) {
-        return 301 https://\$host\$request_uri;
-    }
-
-    listen 80;
-    server_name $DOMAIN;
-    return 404;
-}
 EOF
 
 sudo ln -sf /etc/nginx/sites-available/$DOMAIN /etc/nginx/sites-enabled/
