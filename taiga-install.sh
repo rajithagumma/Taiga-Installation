@@ -269,19 +269,20 @@ sudo mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled
 sudo tee /etc/nginx/sites-available/$DOMAIN > /dev/null <<EOF
 server {
     listen 80;
-    server_name work.justuju.in;
+    server_name $DOMAIN;
     client_max_body_size 100M;
+
     location = /conf.json {
         root /var/www/html;
         add_header Content-Type application/json;
     }
 
     location / {
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Scheme $scheme;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Scheme \$scheme;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_redirect off;
         proxy_pass http://localhost:9000/;
     }
@@ -289,9 +290,9 @@ server {
     location /events {
         proxy_pass http://localhost:9000/events;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
+        proxy_set_header Host \$host;
         proxy_connect_timeout 7d;
         proxy_send_timeout 7d;
         proxy_read_timeout 7d;
